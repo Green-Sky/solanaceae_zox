@@ -64,6 +64,7 @@ void ZoxNGCHistorySync::tick(float delta) {
 	for (auto it = _sync_queue.begin(); it != _sync_queue.end();) {
 		it->second.timer += delta;
 		if (it->second.timer >= it->second.delay) {
+			it->second.timer = 0.f;
 			Message3 msg_e = it->second.ents.front();
 			it->second.ents.pop();
 
