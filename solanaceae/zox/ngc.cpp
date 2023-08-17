@@ -62,7 +62,11 @@ bool ZoxNGCEventProvider::onZoxGroupEvent(
 	} else if (version == 0x01 && pkt_id == 0x11) {
 		std::cout << "ZOX waring: ngc_ft not implemented\n";
 	} else {
-		std::cout << "ZOX waring: unknown packet v" << (int)version << " id" << (int)pkt_id <<"\n";
+		std::cout << "ZOX waring: unknown packet v"
+			<< (int)version
+			<< " id" << (int)pkt_id
+			<< " s:" << data_size
+			<< "\n";
 	}
 
 	return false;
