@@ -380,6 +380,8 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 		reg.emplace<Message::Components::TimestampWritten>(matching_e, sync_ts);
 		reg.emplace<Message::Components::Timestamp>(matching_e, sync_ts); // reactive?
 
+		reg.emplace<Message::Components::TagUnread>(matching_e);
+
 		// TODO: resort
 		//_rmm.resort({ContactGroupEphemeral{e.group_number}});
 		_rmm.throwEventConstruct(reg, matching_e);
