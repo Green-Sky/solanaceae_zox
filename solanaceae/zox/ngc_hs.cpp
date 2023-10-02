@@ -256,7 +256,8 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 	const int64_t sync_delta_offset_ms = int64_t(e.sync_delta) * 1000 * 60;
 	const uint64_t ts_start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - sync_delta_offset_ms;
 
-	auto view = reg.view<Message::Components::ContactFrom, Message::Components::ContactTo, Message::Components::Timestamp, Message::Components::MessageText, Message::Components::ToxGroupMessageID>().use<Message::Components::Timestamp>();
+	auto view = reg.view<Message::Components::ContactFrom, Message::Components::ContactTo, Message::Components::Timestamp, Message::Components::MessageText, Message::Components::ToxGroupMessageID>();
+	view.use<Message::Components::Timestamp>();
 	view.each([&](const Message3 e, const auto&, const auto& c_t, const auto& ts, const auto&, const auto&) {
 		// private
 		if (!_cr.all_of<Contact::Components::TagBig>(c_t.c)) {
@@ -322,8 +323,9 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 	// find matches
 	Message3 matching_e = entt::null;
 	{
-		const auto view = reg.view<Message::Components::ToxGroupMessageID, Message::Components::ContactFrom, Message::Components::Timestamp>();
-		for (const auto ent : view.use<Message::Components::Timestamp>()) {
+		auto view = reg.view<Message::Components::ToxGroupMessageID, Message::Components::ContactFrom, Message::Components::Timestamp>();
+		view.use<Message::Components::Timestamp>();
+		for (const auto ent : view) {
 			if (view.get<Message::Components::ToxGroupMessageID>(ent).id != e.message_id) {
 				continue;
 			}
