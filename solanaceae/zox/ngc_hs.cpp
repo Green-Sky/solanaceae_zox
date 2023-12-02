@@ -12,6 +12,7 @@
 #include <iostream>
 #include <variant>
 #include <vector>
+#include <algorithm>
 
 void ZoxNGCHistorySync::subscribeToEvents(void) {
 	_zngcepi.subscribe(this, ZoxNGC_Event::ngch_request);
@@ -265,9 +266,27 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 		}
 
 		if (ts.ts < ts_start) {
-			std::cout << "---- " << ts.ts << " < " << ts_start << " -> too old\n";
+			//std::cout << "---- " << ts.ts << " < " << ts_start << " -> too old\n";
 			return;
 		}
+
+		if (reg.all_of<Message::Components::SyncedBy>(e)) {
+			const auto& list = reg.get<Message::Components::SyncedBy>(e).list;
+			if (
+				std::find_if(
+					list.cbegin(), list.cend(),
+					[this](const auto& it) {
+						// TODO: add weak self
+						return _cr.all_of<Contact::Components::TagSelfStrong>(it);
+					}
+				) == list.cend()
+			) {
+				// self not found
+				// TODO: config for self only
+				return;
+			}
+		}
+
 		std::cout << "---- " << ts.ts << " >= " << ts_start << " -> selected\n";
 
 		msg_send_queue.push(e);
