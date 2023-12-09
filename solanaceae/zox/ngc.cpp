@@ -1,5 +1,7 @@
 #include "./ngc.hpp"
 
+#include <atomic>
+#include <cstdint>
 #include <optional>
 #include <tuple>
 #include <iostream>
@@ -61,6 +63,9 @@ bool ZoxNGCEventProvider::onZoxGroupEvent(
 		std::cout << "ZOX waring: ngch_syncmsg_file not implemented\n";
 	} else if (version == 0x01 && pkt_id == 0x11) {
 		std::cout << "ZOX waring: ngc_ft not implemented\n";
+	} else if (version == 0x01 && pkt_id == 0x31) {
+		// ngca
+		return parse_ngca(group_number, peer_number, data, data_size, _private);
 	} else {
 		std::cout << "ZOX waring: unknown packet v"
 			<< (int)version
@@ -77,6 +82,14 @@ bool ZoxNGCEventProvider::parse_ngch_request(
 	const uint8_t* data, size_t data_size,
 	bool _private
 ) {
+
+//| what      | Length in bytes| Contents         |
+//|-----------|----------------|------------------|
+//| magic     |       6        |  0x667788113435  |
+//| version   |       1        |  0x01            |
+//| pkt id    |       1        |  0x01            |
+//| sync delta|       1        |  how many minutes back from now() to get messages. allowed values from 5 to 130 minutes (both inclusive) |
+
 	if (data_size > 1) {
 		std::cerr << "ZOX ngch_request has wrong size, should: <=1 , is: " << data_size << "\n";
 		return false;
@@ -110,6 +123,17 @@ bool ZoxNGCEventProvider::parse_ngch_syncmsg(
 	const uint8_t* data, size_t data_size,
 	bool _private
 ) {
+
+//| what        | Length in bytes| Contents                                                                      |
+//|-------------|----------------|-------------------------------------------------------------------------------|
+//| magic       |       6        |  0x667788113435                                                               |
+//| version     |       1        |  0x01                                                                         |
+//| pkt id      |       1        |  0x02 <-- text                                                                |
+//| msg id      |       4        |  4 bytes message id for this group message                                    |
+//| sender      |      32        |  32 bytes pubkey of the original sender in the ngc group                      |
+//| timestamp   |       4        |  uint32_t unixtimestamp in UTC of local wall clock (in bigendian) when the message was originally sent   |
+//| name        |      25        |  sender name 25 bytes (cut off if longer, or right padded with 0x0 bytes)     |
+//| message     | [1, 39927]     |  message text, zero length message not allowed!                               |
 
 	constexpr size_t min_pkg_size = 4 + 32 + 4 + 25;
 	if (data_size <= 4 + 32 + 4 + 25) {
@@ -170,6 +194,67 @@ bool ZoxNGCEventProvider::parse_ngch_syncmsg(
 			timestamp,
 			sender_name,
 			message_text
+		}
+	);
+}
+
+bool ZoxNGCEventProvider::parse_ngca(
+	uint32_t group_number, uint32_t peer_number,
+	const uint8_t* data, size_t data_size,
+	bool _private
+) {
+
+//| what          | Length in bytes| Contents                            |
+//|------         |--------        |------------------                   |
+//| magic         |       6        |  0x667788113435                     |
+//| version       |       1        |  0x01                               |
+//| pkt id        |       1        |  0x31                               |
+//| audio channels|       1        |  uint8_t always 1 (for MONO)        |
+//| sampling freq |       1        |  uint8_t always 48 (for 48kHz)      |
+//| data          |[1, 1362]       |  *uint8_t  bytes, zero not allowed! |
+
+	constexpr size_t min_pkg_size = 1 + 1 + 1;
+	if (data_size < min_pkg_size) {
+		std::cerr << "ZOX ngca has wrong size, should: >=" << min_pkg_size << " , is: " << data_size << "\n";
+		return false;
+	}
+
+	constexpr size_t max_pkg_size = 1 + 1 + 1362;
+	if (data_size > max_pkg_size) {
+		std::cerr << "ZOX ngca has wrong size, should: <=" << max_pkg_size << " , is: " << data_size << "\n";
+		return false;
+	}
+
+	// 1 byte, audio channels
+	uint8_t audio_channels = 0;
+	{
+		audio_channels = data[0];
+
+		data += 1;
+		data_size -= 1;
+	}
+
+	// 1 byte, sampling freq
+	uint8_t sampling_freq = 0;
+	{
+		sampling_freq = data[0];
+
+		data += 1;
+		data_size -= 1;
+	}
+
+	// 1-1362 bytes, data
+	std::vector<uint8_t> v_data{data, data+data_size};
+
+	return dispatch(
+		ZoxNGC_Event::ngca,
+		Events::ZoxNGC_ngca{
+			group_number,
+			peer_number,
+			_private,
+			audio_channels,
+			sampling_freq,
+			std::move(v_data)
 		}
 	);
 }
