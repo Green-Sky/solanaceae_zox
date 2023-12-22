@@ -255,7 +255,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 
 	// convert sync delta to ms
 	const int64_t sync_delta_offset_ms = int64_t(e.sync_delta) * 1000 * 60;
-	const uint64_t ts_start = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() - sync_delta_offset_ms;
+	const uint64_t ts_start = Message::getTimeMS() - sync_delta_offset_ms;
 
 	auto view = reg.view<Message::Components::ContactFrom, Message::Components::ContactTo, Message::Components::Timestamp, Message::Components::MessageText, Message::Components::ToxGroupMessageID>();
 	view.use<Message::Components::Timestamp>();
@@ -337,7 +337,14 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 
 	// convert to ms
 	uint64_t sync_ts = std::chrono::milliseconds(std::chrono::seconds{e.timestamp}).count(); // o.o
-	uint64_t now_ts = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+	uint64_t now_ts = Message::getTimeMS();
+
+	const uint64_t max_future_ms = 1u*60u*1000u; // accept up to 1 minute into the future
+	if (sync_ts - max_future_ms > now_ts) {
+		// message is too far into the future
+		std::cerr << "ZNGCHS error: message ts was too far into the future\n";
+		return true; // false? keep handled?
+	}
 
 	// find matches
 	Message3 matching_e = entt::null;
