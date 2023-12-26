@@ -18,7 +18,7 @@ void ZoxNGCHistorySync::subscribeToEvents(void) {
 	_zngcepi.subscribe(this, ZoxNGC_Event::ngch_request);
 	_zngcepi.subscribe(this, ZoxNGC_Event::ngch_syncmsg);
 
-	_tep.subscribe(this, Tox_Event::TOX_EVENT_GROUP_PEER_JOIN);
+	_tep.subscribe(this, Tox_Event_Type::TOX_EVENT_GROUP_PEER_JOIN);
 }
 
 ZoxNGCHistorySync::ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModel& rmm)
