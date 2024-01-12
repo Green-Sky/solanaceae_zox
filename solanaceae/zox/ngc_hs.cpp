@@ -271,13 +271,14 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 		}
 
 		if (reg.all_of<Message::Components::SyncedBy>(e)) {
-			const auto& list = reg.get<Message::Components::SyncedBy>(e).list;
+			const auto& list = reg.get<Message::Components::SyncedBy>(e).ts;
+			// TODO: optimize with list.contains(self);
 			if (
 				std::find_if(
 					list.cbegin(), list.cend(),
-					[this](const auto& it) {
+					[this](const auto&& it) {
 						// TODO: add weak self
-						return _cr.all_of<Contact::Components::TagSelfStrong>(it);
+						return _cr.all_of<Contact::Components::TagSelfStrong>(it.first);
 					}
 				) == list.cend()
 			) {
@@ -383,14 +384,10 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 				msg_ts_w.ts = sync_ts;
 				reg.emplace_or_replace<Message::Components::Timestamp>(matching_e, sync_ts);
 
-				// TODO: resort
-				//_rmm.resort({ContactGroupEphemeral{e.group_number}});
 				_rmm.throwEventUpdate(reg, matching_e);
 			}
 		} else {
 			// TODO: actually, dont do anything?
-			// TODO: resort
-			//_rmm.resort({ContactGroupEphemeral{e.group_number}});
 			_rmm.throwEventUpdate(reg, matching_e);
 		}
 	} else {
@@ -410,14 +407,20 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 
 		reg.emplace<Message::Components::TagUnread>(matching_e);
 
-		// TODO: resort
-		//_rmm.resort({ContactGroupEphemeral{e.group_number}});
 		_rmm.throwEventConstruct(reg, matching_e);
 	}
 
 	{ // by whom
-		auto& synced_by = reg.get_or_emplace<Message::Components::SyncedBy>(matching_e).list;
-		synced_by.emplace(sync_by_c);
+		auto& synced_by = reg.get_or_emplace<Message::Components::SyncedBy>(matching_e).ts;
+		// dont overwrite
+		synced_by.try_emplace(sync_by_c, now_ts);
+		// TODO: throw update?
+	}
+
+	{ // now we also know they got the message
+		auto& list = reg.get_or_emplace<Message::Components::Remote::TimestampReceived>(matching_e).ts;
+		// dont overwrite
+		list.try_emplace(sync_by_c, now_ts);
 		// TODO: throw update?
 	}
 
