@@ -257,17 +257,25 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 	const int64_t sync_delta_offset_ms = int64_t(e.sync_delta) * 1000 * 60;
 	const uint64_t ts_start = Message::getTimeMS() - sync_delta_offset_ms;
 
-	auto view = reg.view<Message::Components::ContactFrom, Message::Components::ContactTo, Message::Components::Timestamp, Message::Components::MessageText, Message::Components::ToxGroupMessageID>();
-	view.use<Message::Components::Timestamp>();
-	view.each([&](const Message3 e, const auto&, const auto& c_t, const auto& ts, const auto&, const auto&) {
+	auto view = reg.view<Message::Components::Timestamp>();
+	for (auto it = view.rbegin(), it_end = view.rend(); it != it_end; it++) {
+		const Message3 e = *it;
+
+		if (!reg.all_of<Message::Components::ContactFrom, Message::Components::ContactTo, Message::Components::MessageText, Message::Components::ToxGroupMessageID>(e)) {
+			continue; // manual view filter
+		}
+
+		const auto& c_t = reg.get<Message::Components::ContactTo>(e);
+		const auto& ts = view.get<Message::Components::Timestamp>(e);
+
 		// private
 		if (!_cr.all_of<Contact::Components::TagBig>(c_t.c)) {
-			return;
+			continue;
 		}
 
 		if (ts.ts < ts_start) {
 			//std::cout << "---- " << ts.ts << " < " << ts_start << " -> too old\n";
-			return;
+			continue;
 		}
 
 		if (reg.all_of<Message::Components::SyncedBy>(e)) {
@@ -284,14 +292,14 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 			) {
 				// self not found
 				// TODO: config for self only
-				return;
+				continue;
 			}
 		}
 
 		std::cout << "---- " << ts.ts << " >= " << ts_start << " -> selected\n";
 
 		msg_send_queue.push(e);
-	});
+	}
 
 	std::cout << "ZOX ngch_request selected " << msg_send_queue.size() << " messages\n";
 
