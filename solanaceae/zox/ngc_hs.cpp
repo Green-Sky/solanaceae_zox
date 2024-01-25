@@ -296,7 +296,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 			}
 		}
 
-		std::cout << "---- " << ts.ts << " >= " << ts_start << " -> selected\n";
+		//std::cout << "---- " << ts.ts << " >= " << ts_start << " -> selected\n";
 
 		msg_send_queue.push(e);
 	}
