@@ -69,7 +69,7 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 	public:
 		ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModel& rmm);
 
-		void tick(float delta);
+		float tick(float delta);
 
 	public:
 		// always private

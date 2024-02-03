@@ -27,7 +27,9 @@ ZoxNGCHistorySync::ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProvider
 	subscribeToEvents();
 }
 
-void ZoxNGCHistorySync::tick(float delta) {
+float ZoxNGCHistorySync::tick(float delta) {
+	float min_interval {_delay_next_request_min*60.f};
+
 	// send queued requests
 	for (auto it = _request_queue.begin(); it != _request_queue.end();) {
 		it->second.timer += delta;
@@ -57,7 +59,11 @@ void ZoxNGCHistorySync::tick(float delta) {
 				// on failure, assume disconnected
 				it = _request_queue.erase(it);
 			}
+
+			// just choose something small, since we expect a response might arrive soon
+			min_interval = std::min(min_interval, _delay_between_syncs_min);
 		} else {
+			min_interval = std::min(min_interval, it->second.delay - it->second.timer);
 			it++;
 		}
 	}
@@ -66,6 +72,8 @@ void ZoxNGCHistorySync::tick(float delta) {
 		it->second.timer += delta;
 		if (it->second.timer >= it->second.delay) {
 			it->second.timer = 0.f;
+			// TODO: set min_interval?
+
 			Message3 msg_e = it->second.ents.front();
 			it->second.ents.pop();
 
@@ -119,10 +127,14 @@ void ZoxNGCHistorySync::tick(float delta) {
 				it = _sync_queue.erase(it);
 				continue;
 			}
+		} else {
+			min_interval = std::min(min_interval, it->second.delay - it->second.timer);
 		}
 
 		it++;
 	}
+
+	return min_interval;
 }
 
 bool ZoxNGCHistorySync::sendRequest(
