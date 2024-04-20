@@ -370,6 +370,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 	// find matches
 	Message3 matching_e = entt::null;
 	{
+		// TODO: use Contact::Components::MessageIsSame instead
 		auto view = reg.view<Message::Components::ToxGroupMessageID, Message::Components::ContactFrom, Message::Components::Timestamp>();
 		view.use<Message::Components::Timestamp>();
 		for (const auto ent : view) {
@@ -438,7 +439,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 	}
 
 	{ // now we also know they got the message
-		auto& list = reg.get_or_emplace<Message::Components::Remote::TimestampReceived>(matching_e).ts;
+		auto& list = reg.get_or_emplace<Message::Components::ReceivedBy>(matching_e).ts;
 		// dont overwrite
 		list.try_emplace(sync_by_c, now_ts);
 		// TODO: throw update?
