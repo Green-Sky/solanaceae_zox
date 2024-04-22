@@ -99,6 +99,10 @@ float ZoxNGCHistorySync::tick(float delta) {
 				continue;
 			}
 
+			if (!reg.all_of<Message::Components::ContactFrom>(msg_e)) {
+				std::cerr << "ZOX NGCHS error: msg without sender\n";
+				continue;
+			}
 			const auto& msg_sender = reg.get<Message::Components::ContactFrom>(msg_e).c;
 
 			if (!_cr.all_of<Contact::Components::ToxGroupPeerPersistent>(msg_sender)) {
