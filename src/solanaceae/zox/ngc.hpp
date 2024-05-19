@@ -1,10 +1,10 @@
 #pragma once
 
-#include <cstdint>
 #include <solanaceae/toxcore/tox_event_interface.hpp>
 
 #include <solanaceae/util/event_provider.hpp>
 
+#include <cstdint>
 #include <array>
 #include <vector>
 
