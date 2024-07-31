@@ -5,7 +5,7 @@
 #include <solanaceae/tox_contacts/tox_contact_model2.hpp>
 #include <solanaceae/tox_contacts/components.hpp>
 #include <solanaceae/message3/components.hpp>
-#include <solanaceae/tox_messages/components.hpp>
+#include <solanaceae/tox_messages/msg_components.hpp>
 
 #include <optional>
 #include <chrono>
