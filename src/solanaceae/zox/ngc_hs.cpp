@@ -21,7 +21,7 @@ void ZoxNGCHistorySync::subscribeToEvents(void) {
 	_tep.subscribe(this, Tox_Event_Type::TOX_EVENT_GROUP_PEER_JOIN);
 }
 
-ZoxNGCHistorySync::ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModel& rmm)
+ZoxNGCHistorySync::ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModelI& rmm)
 	: _tep(tep), _zngcepi(zngcepi), _t(t), _cr(cr), _tcm(tcm), _rmm(rmm), _rng(std::random_device{}())
 {
 	subscribeToEvents();
@@ -259,7 +259,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 	}
 
 	// const -> dont create (this is a request for existing messages)
-	auto* reg_ptr = static_cast<const RegistryMessageModel&>(_rmm).get(request_sender);
+	auto* reg_ptr = static_cast<const RegistryMessageModelI&>(_rmm).get(request_sender);
 	if (reg_ptr == nullptr) {
 		std::cerr << "ZNGCHS error: group without reg\n";
 		return true;

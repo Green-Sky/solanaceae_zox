@@ -13,7 +13,6 @@
 // fwd
 struct ToxI;
 struct ContactModelI;
-class RegistryMessageModel;
 class ToxContactModel2;
 
 // zoff ngc history sync (draft1?)
@@ -25,7 +24,7 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 	ToxI& _t;
 	Contact3Registry& _cr;
 	ToxContactModel2& _tcm;
-	RegistryMessageModel& _rmm;
+	RegistryMessageModelI& _rmm;
 
 	// how far apart the 2 timestamps can be, before they are considered different messages
 	const int64_t _max_age_difference_ms {130*60*1000}; // TODO: make this larger?
@@ -67,7 +66,7 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 	void subscribeToEvents(void); // private
 
 	public:
-		ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModel& rmm);
+		ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModelI& rmm);
 
 		float tick(float delta);
 
