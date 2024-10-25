@@ -14,17 +14,15 @@
 #include <vector>
 #include <algorithm>
 
-void ZoxNGCHistorySync::subscribeToEvents(void) {
-	_zngcepi.subscribe(this, ZoxNGC_Event::ngch_request);
-	_zngcepi.subscribe(this, ZoxNGC_Event::ngch_syncmsg);
-
-	_tep.subscribe(this, Tox_Event_Type::TOX_EVENT_GROUP_PEER_JOIN);
-}
-
 ZoxNGCHistorySync::ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModelI& rmm)
-	: _tep(tep), _zngcepi(zngcepi), _t(t), _cr(cr), _tcm(tcm), _rmm(rmm), _rng(std::random_device{}())
+	: _tep_sr(tep.newSubRef(this)), _zngcepi_sr(zngcepi.newSubRef(this)), _t(t), _cr(cr), _tcm(tcm), _rmm(rmm), _rng(std::random_device{}())
 {
-	subscribeToEvents();
+	_tep_sr.subscribe(Tox_Event_Type::TOX_EVENT_GROUP_PEER_JOIN);
+
+	_zngcepi_sr
+		.subscribe(ZoxNGC_Event::ngch_request)
+		.subscribe(ZoxNGC_Event::ngch_syncmsg)
+	;
 }
 
 float ZoxNGCHistorySync::tick(float delta) {

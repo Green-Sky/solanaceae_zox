@@ -15,12 +15,13 @@ struct ToxI;
 struct ContactModelI;
 class ToxContactModel2;
 
-// zoff ngc history sync (draft1?)
-// https://gist.github.com/zoff99/81917ddb2e55b2ce602cac4772a7b68c
+// zoff ngc history sync
+// https://github.com/zoff99/c-toxcore/blob/zoff99/zoxcore_local_fork/docs/ngc_group_history_sync.md
+// (old) https://gist.github.com/zoff99/81917ddb2e55b2ce602cac4772a7b68c
 
 class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
-	ToxEventProviderI& _tep;
-	ZoxNGCEventProviderI& _zngcepi;
+	ToxEventProviderI::SubscriptionReference _tep_sr;
+	ZoxNGCEventProviderI::SubscriptionReference _zngcepi_sr;
 	ToxI& _t;
 	Contact3Registry& _cr;
 	ToxContactModel2& _tcm;
@@ -60,10 +61,6 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 		//std::reference_wrapper<Message1Registry> reg;
 	};
 	std::map<Contact3, SyncQueueInfo> _sync_queue;
-
-	// sync queue
-
-	void subscribeToEvents(void); // private
 
 	public:
 		ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModelI& rmm);

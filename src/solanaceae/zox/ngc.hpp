@@ -108,10 +108,8 @@ struct ZoxNGCEventI {
 using ZoxNGCEventProviderI = EventProviderI<ZoxNGCEventI>;
 
 class ZoxNGCEventProvider : public ToxEventI, public ZoxNGCEventProviderI {
-	ToxEventProviderI& _tep;
+	ToxEventProviderI::SubscriptionReference _tep_sr;
 	//ToxI& _t;
-
-	void subscribeToEvents(void); // private
 
 	public:
 		ZoxNGCEventProvider(ToxEventProviderI& tep/*, ToxI& t*/);

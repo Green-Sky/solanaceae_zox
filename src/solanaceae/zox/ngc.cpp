@@ -38,13 +38,11 @@ std::optional<std::pair<uint8_t, uint8_t>> parse_zox_pkg_header(const uint8_t* d
 	return std::make_pair(version, pkt_id);
 }
 
-void ZoxNGCEventProvider::subscribeToEvents(void) {
-	_tep.subscribe(this, Tox_Event_Type::TOX_EVENT_GROUP_CUSTOM_PACKET);
-	_tep.subscribe(this, Tox_Event_Type::TOX_EVENT_GROUP_CUSTOM_PRIVATE_PACKET);
-}
-
-ZoxNGCEventProvider::ZoxNGCEventProvider(ToxEventProviderI& tep) : _tep(tep) {
-	subscribeToEvents();
+ZoxNGCEventProvider::ZoxNGCEventProvider(ToxEventProviderI& tep) : _tep_sr(tep.newSubRef(this)) {
+	_tep_sr
+		.subscribe(Tox_Event_Type::TOX_EVENT_GROUP_CUSTOM_PACKET)
+		.subscribe(Tox_Event_Type::TOX_EVENT_GROUP_CUSTOM_PRIVATE_PACKET)
+	;
 }
 
 bool ZoxNGCEventProvider::onZoxGroupEvent(
