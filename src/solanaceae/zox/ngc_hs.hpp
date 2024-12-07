@@ -36,11 +36,11 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 
 	// 30m-64m
 	const float _delay_next_request_min {30.f*60.f};
-	const float _delay_next_request_add {64.f*60.f};
+	const float _delay_next_request_add {34.f*60.f};
 
 	// 0.3s-0.6s
 	const float _delay_between_syncs_min {0.3f};
-	const float _delay_between_syncs_add {0.6f};
+	const float _delay_between_syncs_add {0.3f};
 
 	std::uniform_real_distribution<float> _rng_dist {0.0f, 1.0f};
 	std::minstd_rand _rng;
