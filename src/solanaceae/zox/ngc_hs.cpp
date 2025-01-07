@@ -271,7 +271,12 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 
 	// convert sync delta to ms
 	const int64_t sync_delta_offset_ms = int64_t(e.sync_delta) * 1000 * 60;
-	const uint64_t ts_start = getTimeMS() - sync_delta_offset_ms;
+	uint64_t ts_start = getTimeMS() - sync_delta_offset_ms;
+
+	// make sure we dont sync past the peers first appearance
+	if (const auto first_seen_ptr = request_sender.try_get<Contact::Components::FirstSeen>(); first_seen_ptr != nullptr) {
+		ts_start = std::max(ts_start, first_seen_ptr->ts);
+	}
 
 	auto view = reg.view<Message::Components::Timestamp>();
 	for (auto it = view.rbegin(), it_end = view.rend(); it != it_end; it++) {
