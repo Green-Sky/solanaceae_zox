@@ -1,5 +1,7 @@
 #include "./ngc_hs.hpp"
 
+#include <solanaceae/util/time.hpp>
+
 #include <solanaceae/toxcore/tox_interface.hpp>
 #include <solanaceae/contact/components.hpp>
 #include <solanaceae/tox_contacts/tox_contact_model2.hpp>
@@ -269,7 +271,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 
 	// convert sync delta to ms
 	const int64_t sync_delta_offset_ms = int64_t(e.sync_delta) * 1000 * 60;
-	const uint64_t ts_start = Message::getTimeMS() - sync_delta_offset_ms;
+	const uint64_t ts_start = getTimeMS() - sync_delta_offset_ms;
 
 	auto view = reg.view<Message::Components::Timestamp>();
 	for (auto it = view.rbegin(), it_end = view.rend(); it != it_end; it++) {
@@ -349,7 +351,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 
 	auto* reg_ptr = _rmm.get(sync_by_c);
 	if (reg_ptr == nullptr) {
-		std::cerr << "ZNGCHS error: group without reg\n";
+		std::cerr << "ZNGCHS error: group without msg reg\n";
 		return false;
 	}
 
@@ -360,7 +362,7 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_syncmsg& e) {
 
 	// convert to ms
 	uint64_t sync_ts = std::chrono::milliseconds(std::chrono::seconds{e.timestamp}).count(); // o.o
-	uint64_t now_ts = Message::getTimeMS();
+	uint64_t now_ts = getTimeMS();
 
 	const uint64_t max_future_ms = 1u*60u*1000u; // accept up to 1 minute into the future
 	if (sync_ts - max_future_ms > now_ts) {
