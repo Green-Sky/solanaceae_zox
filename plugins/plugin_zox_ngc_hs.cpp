@@ -36,13 +36,13 @@ SOLANA_PLUGIN_EXPORT uint32_t solana_plugin_start(struct SolanaAPI* solana_api) 
 		auto* tox_i = PLUG_RESOLVE_INSTANCE(ToxI);
 		auto* tox_event_provider_i = PLUG_RESOLVE_INSTANCE(ToxEventProviderI);
 		auto* zox_ngc_event_provider_i = PLUG_RESOLVE_INSTANCE(ZoxNGCEventProviderI);
-		auto* cr = PLUG_RESOLVE_INSTANCE_VERSIONED(Contact3Registry, "1");
+		auto* cs = PLUG_RESOLVE_INSTANCE(ContactStore4I);
 		auto* tcm = PLUG_RESOLVE_INSTANCE(ToxContactModel2);
 		auto* rmm = PLUG_RESOLVE_INSTANCE(RegistryMessageModelI);
 
 		// static store, could be anywhere tho
 		// construct with fetched dependencies
-		g_zngchs = std::make_unique<ZoxNGCHistorySync>(*tox_event_provider_i, *zox_ngc_event_provider_i, *tox_i, *cr, *tcm, *rmm);
+		g_zngchs = std::make_unique<ZoxNGCHistorySync>(*tox_event_provider_i, *zox_ngc_event_provider_i, *tox_i, *cs, *tcm, *rmm);
 
 		// register types
 		PLUG_PROVIDE_INSTANCE(ZoxNGCHistorySync, plugin_name, g_zngchs.get());

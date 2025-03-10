@@ -3,6 +3,7 @@
 #include <solanaceae/util/time.hpp>
 
 #include <solanaceae/toxcore/tox_interface.hpp>
+#include <solanaceae/contact/contact_store_i.hpp>
 #include <solanaceae/contact/components.hpp>
 #include <solanaceae/tox_contacts/tox_contact_model2.hpp>
 #include <solanaceae/tox_contacts/components.hpp>
@@ -16,8 +17,8 @@
 #include <vector>
 #include <algorithm>
 
-ZoxNGCHistorySync::ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModelI& rmm)
-	: _tep_sr(tep.newSubRef(this)), _zngcepi_sr(zngcepi.newSubRef(this)), _t(t), _cr(cr), _tcm(tcm), _rmm(rmm), _rng(std::random_device{}())
+ZoxNGCHistorySync::ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, ContactStore4I& cs, ToxContactModel2& tcm, RegistryMessageModelI& rmm)
+	: _tep_sr(tep.newSubRef(this)), _zngcepi_sr(zngcepi.newSubRef(this)), _t(t), _cs(cs), _tcm(tcm), _rmm(rmm), _rng(std::random_device{}())
 {
 	_tep_sr.subscribe(Tox_Event_Type::TOX_EVENT_GROUP_PEER_JOIN);
 
@@ -35,12 +36,14 @@ float ZoxNGCHistorySync::tick(float delta) {
 		it->second.timer += delta;
 
 		if (it->second.timer >= it->second.delay) {
-			if (!_cr.all_of<Contact::Components::ToxGroupPeerEphemeral>(it->first)) {
+			const auto& cr = _cs.registry();
+
+			if (!cr.all_of<Contact::Components::ToxGroupPeerEphemeral>(it->first)) {
 				// peer nolonger online
 				it = _request_queue.erase(it);
 				continue;
 			}
-			const auto [group_number, peer_number] = _cr.get<Contact::Components::ToxGroupPeerEphemeral>(it->first);
+			const auto [group_number, peer_number] = cr.get<Contact::Components::ToxGroupPeerEphemeral>(it->first);
 
 			if (sendRequest(group_number, peer_number, it->second.sync_delta)) {
 				// on success, requeue with longer delay (minutes)
@@ -77,12 +80,14 @@ float ZoxNGCHistorySync::tick(float delta) {
 			Message3 msg_e = it->second.ents.front();
 			it->second.ents.pop();
 
-			if (!_cr.all_of<Contact::Components::ToxGroupPeerEphemeral>(it->first)) {
+			const auto& cr = _cs.registry();
+
+			if (!cr.all_of<Contact::Components::ToxGroupPeerEphemeral>(it->first)) {
 				// peer nolonger online
 				it = _sync_queue.erase(it);
 				continue;
 			}
-			const auto [group_number, peer_number] = _cr.get<Contact::Components::ToxGroupPeerEphemeral>(it->first);
+			const auto [group_number, peer_number] = cr.get<Contact::Components::ToxGroupPeerEphemeral>(it->first);
 
 			auto* reg_ptr = _rmm.get(it->first);
 			if (reg_ptr == nullptr) {
@@ -105,7 +110,7 @@ float ZoxNGCHistorySync::tick(float delta) {
 			}
 			const auto& msg_sender = reg.get<Message::Components::ContactFrom>(msg_e).c;
 
-			if (!_cr.all_of<Contact::Components::ToxGroupPeerPersistent>(msg_sender)) {
+			if (!cr.all_of<Contact::Components::ToxGroupPeerPersistent>(msg_sender)) {
 				std::cerr << "ZOX NGCHS error: msg sender without persistant\n";
 				continue;
 			}
@@ -114,8 +119,8 @@ float ZoxNGCHistorySync::tick(float delta) {
 			// TODO: make sure there is no alias leaked
 			//const auto msg_sender_name = _cm.getContactName(msg_sender);
 			std::string_view msg_sender_name;
-			if (_cr.all_of<Contact::Components::Name>(msg_sender)) {
-				msg_sender_name = _cr.get<Contact::Components::Name>(msg_sender).name;
+			if (cr.all_of<Contact::Components::Name>(msg_sender)) {
+				msg_sender_name = cr.get<Contact::Components::Name>(msg_sender).name;
 			}
 
 
@@ -123,7 +128,7 @@ float ZoxNGCHistorySync::tick(float delta) {
 				group_number,
 				peer_number,
 				reg.get<Message::Components::ToxGroupMessageID>(msg_e).id,
-				_cr.get<Contact::Components::ToxGroupPeerPersistent>(msg_sender).peer_key.data,
+				cr.get<Contact::Components::ToxGroupPeerPersistent>(msg_sender).peer_key.data,
 				std::chrono::duration_cast<std::chrono::seconds>(std::chrono::milliseconds{reg.get<Message::Components::Timestamp>(msg_e).ts}).count(),
 				msg_sender_name,
 				reg.get<Message::Components::MessageText>(msg_e).text
@@ -289,8 +294,10 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 		const auto& c_t = reg.get<Message::Components::ContactTo>(e);
 		const auto& ts = view.get<Message::Components::Timestamp>(e);
 
+		const auto& cr = _cs.registry();
+
 		// private
-		if (!_cr.all_of<Contact::Components::TagBig>(c_t.c)) {
+		if (!cr.all_of<Contact::Components::TagBig>(c_t.c)) {
 			continue;
 		}
 
@@ -305,9 +312,9 @@ bool ZoxNGCHistorySync::onEvent(const Events::ZoxNGC_ngch_request& e) {
 			if (
 				std::find_if(
 					list.cbegin(), list.cend(),
-					[this](const auto&& it) {
+					[this, &cr](const auto&& it) {
 						// TODO: add weak self
-						return _cr.all_of<Contact::Components::TagSelfStrong>(it.first);
+						return cr.all_of<Contact::Components::TagSelfStrong>(it.first);
 					}
 				) == list.cend()
 			) {

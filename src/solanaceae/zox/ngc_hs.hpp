@@ -2,7 +2,7 @@
 
 #include "./ngc.hpp"
 
-#include <solanaceae/contact/contact_model3.hpp>
+#include <solanaceae/contact/fwd.hpp>
 #include <solanaceae/message3/registry_message_model.hpp>
 
 #include <array>
@@ -23,7 +23,7 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 	ToxEventProviderI::SubscriptionReference _tep_sr;
 	ZoxNGCEventProviderI::SubscriptionReference _zngcepi_sr;
 	ToxI& _t;
-	Contact3Registry& _cr;
+	ContactStore4I& _cs;
 	ToxContactModel2& _tcm;
 	RegistryMessageModelI& _rmm;
 
@@ -52,7 +52,7 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 	};
 	// request queue
 	// c -> delay, timer
-	std::map<Contact3, RequestQueueInfo> _request_queue;
+	std::map<Contact4, RequestQueueInfo> _request_queue;
 
 	struct SyncQueueInfo {
 		float delay; // const
@@ -60,10 +60,10 @@ class ZoxNGCHistorySync : public ToxEventI, public ZoxNGCEventI {
 		std::queue<Message3> ents;
 		//std::reference_wrapper<Message1Registry> reg;
 	};
-	std::map<Contact3, SyncQueueInfo> _sync_queue;
+	std::map<Contact4, SyncQueueInfo> _sync_queue;
 
 	public:
-		ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, Contact3Registry& cr, ToxContactModel2& tcm, RegistryMessageModelI& rmm);
+		ZoxNGCHistorySync(ToxEventProviderI& tep, ZoxNGCEventProviderI& zngcepi, ToxI& t, ContactStore4I& cs, ToxContactModel2& tcm, RegistryMessageModelI& rmm);
 
 		float tick(float delta);
 
